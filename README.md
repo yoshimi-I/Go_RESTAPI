@@ -14,9 +14,13 @@
   7. [条件分岐(if文)](#anchor10)
   8. [条件分岐(for文)](#anchor11)
   9. [条件分岐(switch文)](#anchor12)
-  10. [その他の色々な書き方(defer)](#anchor12)
-  11. [init関数](#anchor13)
-  12. [参照型](#anchor14)
+  10. [その他の色々な書き方(defer)](#anchor13)
+  11. [init関数](#anchor14)
+  12. [参照型](#anchor15)
+  13. [チャネル](#anchor16)
+  14. [チャネルとゴルーチン](#anchor17)
+  15. [ポインタ](#anchor18)
+
 # 1. まず最初にやること(環境構築) <a id="anchor1"></a>
 1. docker-composeからGoのイメージの取得
     - 簡単にいうとbuildでイメージの作成を行い,up -dでイメージをもとにコンテナを立ち上げる。
@@ -447,58 +451,157 @@ func main() {
 ## 12. 参照型<a id="anchor15"></a>
 1. スライスの復習
   - 初期化
-  ```go
-    sl := []int{1, 2, 3}
-    fmt.Println(sl)
-  ```
+    ```go
+      sl := []int{1, 2, 3}
+      fmt.Println(sl)
+    ```
   - make関数
-  ```go
-    //make(作りたいもの,要素数,容量)
-    s1 := make([]int,5,10) 
+    ```go
+      //make(作りたいもの,要素数,容量)
+      s1 := make([]int,5,10) 
 
-  ```
+    ```
   - 追加
-  ```go
-    sl2 := make([]int, 5)
-    sl2 = append(sl2, 3)
-    fmt.Println(sl2)
-  ```
+    ```go
+      sl2 := make([]int, 5)
+      sl2 = append(sl2, 3)
+      fmt.Println(sl2)
+    ```
   - コピー(同じ参照先を使わない配列)
-  ```go
-  // copy(コピー先,コピー元)
-  s1 := []int{1, 3, 4}
-	s2 := make([]int, 10, 10)
-	fmt.Println(s2)
-	copy(s2, s1)
-	fmt.Println(s2)
+    ```go
+    // copy(コピー先,コピー元)
+    s1 := []int{1, 3, 4}
+    s2 := make([]int, 10, 10)
+    fmt.Println(s2)
+    copy(s2, s1)
+    fmt.Println(s2)
 
-  >>>
-  [0 0 0 0 0 0 0 0 0 0]
-  [1 3 4 0 0 0 0 0 0 0]
+    >>>
+    [0 0 0 0 0 0 0 0 0 0]
+    [1 3 4 0 0 0 0 0 0 0]
 
-  ```
+    ```
 2. 辞書型
-  ```go
-  s1 := map[string]int{"A": 1, "B": 3}
-	s1["C"] = 1
-	fmt.Println(s1)
-	fmt.Println(s1["A"])
-  ```
+    ```go
+    s1 := map[string]int{"A": 1, "B": 3}
+    s1["C"] = 1
+    fmt.Println(s1)
+    fmt.Println(s1["A"])
+    ```
   - エラーハンドリング
-  ```go
-  s,err = s1["D"]
-  // こうすることで存在しない場合はerrにfalseが入る
-  ```
+    ```go
+    s,err = s1["D"]
+    // こうすることで存在しない場合はerrにfalseが入る
+    ```
   - 削除
-  ```go
-  delete(s1,"A")
-  // こうすることで要素を削除できる
-  ```
+    ```go
+    delete(s1,"A")
+    // こうすることで要素を削除できる
+    ```
   - for文でループ
+    ```go
+    s1 := map[string]int{"A": 1, "B": 3}
+    s1["C"] = 1
+    for key, value := range s1 {
+      fmt.Println(key, value)
+    }
+    ```
+  ## 13. チャネル<a id="anchor16"></a>
+  - チャネルとは、バッファ(一時的に記憶する場所)を用いて送受信をするときの中間役を担う
+    - 島と島を行き来する船みたいなもん(乗客数が限られている)
+  - 基本的にはチャネル作成時にどれだけの領域を確保するかを指定することができる。
+    ```go
+    ch := make(chan int, 2)
+    // これは容量が２である
+    ```
+  - そして以下のようにすることでチャネル(船)に値を突っ込める
+    ```
+      ch <- 1
+      ch <- 2 
+    ```
+  - また取り出すときは以下のようになる
+    - また取り出す順番はキューである(最初に乗った乗客から降りるイメージ)
+    ```go
+    i := <- ch 
+    // とすることで取り出せる。
+    ```
+  - 具体例
+    ```go
+    s1 := make(chan int, 6)
+    s1 <- 1
+    s1 <- 2
+    num1 := <-s1
+    num2 := <-s1
+    fmt.Println(num1, num2)
+    s1 <- 3
+    fmt.Println(<-s1)
+
+    >>>
+    1 2
+    3
+    ```
+  ### チャネルを閉じる
+  - 値の入り口を閉じる、値は取り出せる（それ以上船に客を入れないようにするイメージ）
   ```go
-  s1 := map[string]int{"A": 1, "B": 3}
-	s1["C"] = 1
-	for key, value := range s1 {
-		fmt.Println(key, value)
+    s1 := make(chan int, 6)
+    close(s1)
+
+    // また閉じているかの確認は第二引数から確認可能(チャネルのバッファが空でかつ、閉じていたらfalse)
+    i,ok := <-s1
+  ```
+  ### チャネルとfor文
+  - 気を付ける場所はバッファがいっぱいになったら必ずチャネルを閉めること
+  ```go
+  ch1 := make(chan int, 3)
+	ch1 <- 1
+	ch1 <- 3
+	ch1 <- 5
+	close(ch1) //for文で回す時は必ずここがいる
+	for i := range ch1 {
+		fmt.Println(i)
 	}
   ```
+  ## 14. チャネルとゴルーチン<a id="anchor17"></a>
+  1. ゴルーチンとは
+  - 簡単に言え並列処理を行うための仕組み
+    ```go
+    func hello() {
+      for {
+        fmt.Println("やあ")
+        time.Sleep(100 * time.Millisecond)
+      }
+    }
+    func hello2() {
+      for {
+        fmt.Println("やあ2")
+        time.Sleep(100 * time.Millisecond)
+      }
+    }
+    func main() {
+      hello()
+      hello2()
+    }
+    ```
+  - 例えば以上の例だとhello()が無限ループのためhello2()は呼ばれないわけだが、これを呼ばれるようにするにはgoをhello()の前につけることで並行に動く関数だと明示する
+    - ポイントは関数の前にgoとつけなくてはいけない(関数出ないといけない)
+    ```go
+    go hello()
+    hello2()
+    
+    ```
+  2. チャネルとゴルーチン
+  - 並列に行うとき、2つの走っている関数間で値の受け渡しを行い続けるときにチャネルを用いる
+  ## 15. ポインタ<a id="anchor18"></a>
+  - ポインタとは変数や関数,配列のメモリの場所を指す
+  - C言語と同じだがポインタ型が存在する
+    - 基本的にはC言語とおんなじ
+    ```go
+    i := 13
+    p := &i
+    fmt.Println(p, *p)
+
+    >> 
+    0x1400001a0d8 13
+    ```
+    - &をつけるとメモリのアドレス値
+    - ＊をつけるとポインタの参照先の値,＊がないとそのままアドレスを指す
