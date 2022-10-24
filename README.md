@@ -13,6 +13,10 @@
   6. [関数](#anchor9)
   7. [条件分岐(if文)](#anchor10)
   8. [条件分岐(for文)](#anchor11)
+  9. [条件分岐(switch文)](#anchor12)
+  10. [その他の色々な書き方(defer)](#anchor12)
+  11. [init関数](#anchor13)
+  12. [参照型](#anchor14)
 # 1. まず最初にやること(環境構築) <a id="anchor1"></a>
 1. docker-composeからGoのイメージの取得
     - 簡単にいうとbuildでイメージの作成を行い,up -dでイメージをもとにコンテナを立ち上げる。
@@ -322,3 +326,179 @@ func main() {
   }
   ```
   とすればできる
+### (応用)ラベル付きのfor
+- まずは既存のfor文
+```GO
+func main() {
+	for i := 0; i < 5; i++ {
+		for j := 0; j < 5; j++ {
+			if j == 3 {
+				break
+			}
+			fmt.Println(i, j)
+		}
+	}
+}
+
+>>>
+0 0
+0 1
+0 2
+1 0
+1 1
+1 2
+2 0
+2 1
+2 2
+3 0
+3 1
+3 2
+
+```
+- これはjが3の時のみ抜ける処理のため前半は1から3までループ,後半は0から2までループすることになる。
+- ではjの値が3となった瞬間に全てのループを抜けるにはどうしたらいいだろうか？
+  - pythonでいうところのexit()である
+- それが以下になる
+```Go
+func main() {
+Loop:
+	for i := 0; i < 4; i++ {
+		for j := 0; j < 4; j++ {
+			if j == 3 {
+				break Loop
+			}
+			fmt.Println(i, j)
+		}
+	}
+	fmt.Println("ループ終了")
+```
+- Loopと付けることで、breakの後にLoop直下の場所のfor文終了までスキップすることができる。
+## 9.条件分岐(switch文) <a id="anchor12"></a>
+- 基本的には他のものと一緒
+```Go
+n := 1
+switch n{
+case 1,2:
+  fmt.Println("1か2です")
+case 3:
+  fmt.Println("3です")
+defer:
+  fmt.Println("1,2,3以外です")
+}
+
+
+
+ちなみに以上を簡単に書くと
+switch n:=1;n{
+case 1,2:
+  fmt.Println("1か2です")
+case 3:
+  fmt.Println("3です")
+defer:
+  fmt.Println("1,2,3以外です")
+}
+
+
+また
+switch{
+  case n = 1:
+    fmt.Println("n=1です")
+}
+と書くこともできる
+```
+### switch応用
+- 型による条件分岐をすることも可能である。
+  ```go
+  switch x.(tipe){
+    case int:
+      fmt.Println
+  }
+  ```
+  みたいな感じ
+## 10.その他の色々な書き方)(defer) <a id="anchor13"></a>
+- 簡単にいうとdeferをつけると処理が終わったとに(つまり最後に実行される)
+- 2つ以上あるときは,スタックのようになり,最初にdeferが付いてるものが一番最後
+```go
+defer fmt.Println("最後")
+defer fmt.Println("最後2")
+fmt.Println("やあ")
+
+>>>
+やあ
+最後2
+最後
+```
+- 以上のような出力となる
+## 11. init関数<a id="anchor14"></a>
+- main関数が最初に呼ばれるわけだが、それよりも前に呼ぶことができる。
+```Go
+func init() {
+	fmt.Println("やあ")
+}
+
+func main() {
+	fmt.Println("テスト")
+
+}
+>>>
+やあ
+テスト
+```
+## 12. 参照型<a id="anchor15"></a>
+1. スライスの復習
+  - 初期化
+  ```go
+    sl := []int{1, 2, 3}
+    fmt.Println(sl)
+  ```
+  - make関数
+  ```go
+    //make(作りたいもの,要素数,容量)
+    s1 := make([]int,5,10) 
+
+  ```
+  - 追加
+  ```go
+    sl2 := make([]int, 5)
+    sl2 = append(sl2, 3)
+    fmt.Println(sl2)
+  ```
+  - コピー(同じ参照先を使わない配列)
+  ```go
+  // copy(コピー先,コピー元)
+  s1 := []int{1, 3, 4}
+	s2 := make([]int, 10, 10)
+	fmt.Println(s2)
+	copy(s2, s1)
+	fmt.Println(s2)
+
+  >>>
+  [0 0 0 0 0 0 0 0 0 0]
+  [1 3 4 0 0 0 0 0 0 0]
+
+  ```
+2. 辞書型
+  ```go
+  s1 := map[string]int{"A": 1, "B": 3}
+	s1["C"] = 1
+	fmt.Println(s1)
+	fmt.Println(s1["A"])
+  ```
+  - エラーハンドリング
+  ```go
+  s,err = s1["D"]
+  // こうすることで存在しない場合はerrにfalseが入る
+  ```
+  - 削除
+  ```go
+  delete(s1,"A")
+  // こうすることで要素を削除できる
+  ```
+  - for文でループ
+  ```go
+  s1 := map[string]int{"A": 1, "B": 3}
+	s1["C"] = 1
+	for key, value := range s1 {
+		fmt.Println(key, value)
+	}
+  ```
