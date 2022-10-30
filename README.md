@@ -23,6 +23,9 @@
   16. [構造体](#anchor19)
   17. [インターフェース](#anchor20)
   18. [スコープ](#anchor21)
+4. [テスト](#anchor22)
+5. [標準パッケージ](#anchor23)
+6. [DB操作](#anchor24)
 
 # 1. まず最初にやること(環境構築) <a id="anchor1"></a>
 1. docker-composeからGoのイメージの取得
@@ -721,4 +724,72 @@ func main() {
 	intro.selfIntroduction()
 
 }
+  ```
+  ## 18. スコープ<a id="anchor21"></a>
+  - Goは複数のパッケージを組み合わせて使うが他のパッケージ内から参照するのか,パッケージ内のみのスコープにするのかなど厳密に管理する必要がある
+  ### パッケージ間のスコープ
+  - 今回はmainと同じディレクトリのpkgの下にtest.goというファイルを作成し、そこにパッケージを作成した。
+  - 大文字であれば外部から使えるし、小文字であれば使えない
+  ```go
+    package test
+
+    const (
+      Max = 100
+      min = 1
+    )
+  ```
+  - このとき,Maxは呼び出せるがminは呼び出せない
+    - minはプライベートのため使いたかったらgetterのような関数を実装する
+    ```go
+    func Return_min() int {
+      return min
+    }
+    ```
+# 4. テスト<a id="anchor22"></a>
+- GO言語にはtest機能というものが備わっており同じディレクトリにtestファイルを作る
+  - 例えばmain.goのテストがしたければmain_test.goを作る
+- 実行したい場合はターミナルでgo test とする
+  ```go
+  package main
+
+  import "testing"
+
+  //ここにデバッグ制御の文章を書く
+
+  var Debug bool = false
+
+  func TestOldTest(t *testing.T) {
+    i := 20
+    if Debug {
+      t.Skip("スキップ")
+    }
+    v := OldTest(i)
+    if !v {
+      t.Errorf("%v >= %v", i, 20)
+    }
+
+  }
+  ```
+# 5. 標準パッケージ<a id="anchor22"></a>
+## OS
+- 終了
+ ```go
+ os.exit(1) >>>抜ける(pythonのexitと同じ)
+ ```
+ - ファイル処理
+ ```go
+
+ f, err := os.Open("test.txt")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer f.Close()
+```
+## rand
+- 疑似乱数の生成
+
+# 6. DB操作<a id="anc
+- まずはSQLightから、goのgo.modがある場所で以下をターミナルに打ち込む
+  ```ターミナル
+   go get github.com/mattn/go-sqlite3
   ```
