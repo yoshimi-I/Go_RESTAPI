@@ -20,6 +20,9 @@
   13. [チャネル](#anchor16)
   14. [チャネルとゴルーチン](#anchor17)
   15. [ポインタ](#anchor18)
+  16. [構造体](#anchor19)
+  17. [インターフェース](#anchor20)
+  18. [スコープ](#anchor21)
 
 # 1. まず最初にやること(環境構築) <a id="anchor1"></a>
 1. docker-composeからGoのイメージの取得
@@ -605,3 +608,117 @@ func main() {
     ```
     - &をつけるとメモリのアドレス値
     - ＊をつけるとポインタの参照先の値,＊がないとそのままアドレスを指す
+    ## 16. 構造体<a id="anchor19"></a>
+    - 簡単に言えばオブジェクト指向のclassの役割
+      - 構造体を使うあたりC言語へのリスペクトを感じる
+      - いかにpythonとGoでの比較を行う
+      ```python
+      # pyhon
+      class Test:
+        def __init__(self,age,name):
+          self.age = age
+          self.name = name
+      test = Test()
+      ```
+      ```go
+      //Go
+      type User struct {
+	    Age  int
+	    Name string
+      }
+      user := User{22,"Yoshimi"}
+      ```
+    ### 初期化のあれこれ
+    - 構造体の初期化には主に3つがある
+    ```go
+    var user1 User
+	  user2 := User{}
+    // 以上の2つは同じ意味
+
+    user3 := new(User)
+    user4 := &User{}
+    // これはUserのポインタ値を返す
+    ```
+    ### じゃあどこで構造体のポインタを使うのか？
+    - これはメソッドの実装で用いる
+    - 簡単にいうと構造体のポインタを引数に取る関数を実装することでその構造体を更新することができるため、そこでメンバ変数だったりメソッドを実装することができる。
+    ### メソッドの実装
+    - 構造体に関数を実装する
+    ```go
+    func (u *User) SeyName() {
+      fmt.Println(u.Name)
+    }
+    ```
+    - 基本的には関数名の前にメソッドを実装したい構造体とそのポインタ値を実装する
+    ### メソッドの埋め込み
+    - 構造体の中に構造体を埋め込むことができる
+    ```Go
+    type T struct {
+      User
+    }
+    user1 := T{User: User{23, "YOSHIMI"}}
+    fmt.Println(user1.Name)
+    ```
+    - このようにいきなりNameを使うことも可能
+    ### コンストラクタ
+    - GOにはコンストラクタ(初期化メソッド)が存在しないため自分で作る必要がある
+    - 初期化するときに自動で作られるもののため、返り値を構造体のポインタ値にする
+    ```go
+      func NewUser(age int, name string) *User {
+    return &User{Age: age, Name: name}
+  }
+    ```
+    - ちなみにIntelliJだと自動で生成してくれる(javaとおんなじ)
+  ## 17. インターフェース<a id="anchor20"></a>
+  - 簡単に言えば構造体ごとに微妙に異なるが共通している部分があるメソッドをインターフェースとして保持しておく(具体的な処理は書かずメソッド名だけを保持する)
+  ```go
+  type Person struct {
+	Age  int
+	Name string
+}
+type Animal struct {
+	Age  int
+	Kind string
+}
+
+func (p *Person) selfIntroduction() {
+	fmt.Println("私は"+p.Name+"です")
+}
+func (a *Animal) selfIntroduction()  {
+	fmt.Println("私は"+a.Kind+"です")
+}
+  ```
+  - このように同じメソッド名だけど微妙に違う場合インターフェースを用いる
+  - インターフェースは何かは具体的には書いていないがこう言うメソッドを後に呼ぶと言うことを宣言するときに使う
+### 大まかな手順
+1. まずはメソッドをまとめたインターフェースを作成
+2. 次に作成したインターフェース型に作成した構造体を作成する
+    - このとき構造体の中に存在するメソッド名をインターフェースで実装している必要がある
+    - ちなみにメソッドにポインタを指定する場合は&をつける
+  ```go
+  type Person struct {
+	Age  int
+	Name string
+}
+type Animal struct {
+	Age  int
+	Kind string
+}
+
+func (p *Person) selfIntroduction() {
+	fmt.Println("私は" + p.Name + "です")
+}
+func (a *Animal) selfIntroduction() {
+	fmt.Println("私は" + a.Kind + "です")
+}
+
+type Introduction interface {
+	selfIntroduction()
+}
+
+func main() {
+	var intro Introduction = &Person{22, "YOSHIMI"}
+	intro.selfIntroduction()
+
+}
+  ```
