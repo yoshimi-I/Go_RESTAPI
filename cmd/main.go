@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/yoshimi-I/Go_RESTAPI/pkg"
+)
 
 func main() {
-	fmt.Println("こんにちは")
+	fmt.Println(test.MAX)
+	fmt.Println(test.Return_min())
 }
