@@ -7,3 +7,16 @@ services:
     tty: true # コンテナの永続化
     volumes:
       - ./cmd:/go/src/app # マウントディレクトリ
+    depends_on:
+      - db
+  db:
+    image: postgres:latest
+    tty: true
+    ports:
+      - 5431:5431
+    environment:
+      - POSTGRES_USER=app_user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=app_db
+    volumes:
+      - ./db:/go/src/db
