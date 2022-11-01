@@ -35,12 +35,17 @@
     docker cmpose up -d　
     ```
 2. modファイルの初期化
-    ```
+    ```go
     go mod init github.com/yoshimi-I/Go_RESTAPI
     ```
 - といった感じでリポジトリのurlのhttps:以降をinitの後に続けたものをターミナルに打ち込む。
 - そうすることでgo.modというバージョンを管理するファイルが作られる。
   - これにパッケージをインポートいていく感じですね、Reactでいうpackage.jsonみたいなやつ
+ 3. ライブラリのインポート
+    ```go
+    go get ~
+    ```
+ - としてライブラリを入れていく
 # 2. パッケージってなんやねん <a id="anchor2"></a>
 ```Go
 package main
